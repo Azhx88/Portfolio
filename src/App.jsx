@@ -127,6 +127,53 @@ function useRotatingText(words, delay = 1800) {
   return words[index]
 }
 
+function TypeWriter({ text, speed = 40, delay = 500 }) {
+  const [displayText, setDisplayText] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [showCursor, setShowCursor] = useState(true)
+
+  useEffect(() => {
+    // Initial delay before typing starts
+    const startTimeout = setTimeout(() => {
+      setIsTyping(true)
+    }, delay)
+
+    return () => clearTimeout(startTimeout)
+  }, [delay])
+
+  useEffect(() => {
+    if (!isTyping) return
+
+    if (displayText.length < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(text.slice(0, displayText.length + 1))
+      }, speed)
+      return () => clearTimeout(timeout)
+    }
+  }, [displayText, text, speed, isTyping])
+
+  // Blinking cursor effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev)
+    }, 530)
+    return () => clearInterval(cursorInterval)
+  }, [])
+
+  return (
+    <span>
+      {displayText}
+      <span
+        className="inline-block w-[2px] h-[1.1em] ml-1 align-middle"
+        style={{
+          backgroundColor: showCursor ? 'rgba(255,255,255,0.8)' : 'transparent',
+          transition: 'background-color 0.1s',
+        }}
+      />
+    </span>
+  )
+}
+
 function useTheme() {
   const prefersDark = () =>
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -200,83 +247,151 @@ function SectionTitle({ eyebrow, title, kicker }) {
 
 function SkillOrbit() {
   const [hovered, setHovered] = useState(null)
+  const [isPaused, setIsPaused] = useState(false)
   const radius = 140
 
   return (
     <div className="relative mt-10 mb-6 flex items-center justify-center">
       <div className="relative h-[360px] w-full max-w-[560px]">
+        {/* Animated orbit rings with floating effect */}
         {[110, 160, 210].map((r, i) => (
-          <div
+          <motion.div
             key={r}
             className="absolute inset-0 m-auto rounded-full border border-white/10"
             style={{ width: r * 2, height: r * 2, filter: 'drop-shadow(0 0 30px rgba(113,39,186,0.25))' }}
+            animate={{
+              scale: [1, 1.02, 1],
+              rotate: [0, i % 2 === 0 ? 360 : -360],
+            }}
+            transition={{
+              scale: {
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              },
+              rotate: {
+                duration: 60 + i * 20,
+                repeat: Infinity,
+                ease: 'linear',
+              },
+            }}
           />
         ))}
 
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Center element with floating animation */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center"
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <div className="h-28 w-28 rounded-full bg-gradient-to-b from-accent/70 to-accent2/50 blur-[2px]" />
           <div className="absolute h-24 w-24 rounded-full bg-surface/80 border border-white/10 grid place-items-center text-white font-semibold">
             Stack
           </div>
-        </div>
+        </motion.div>
 
-        {skills.map((skill, idx) => {
-          const angle = (idx / skills.length) * Math.PI * 2
-          const x = Math.cos(angle) * radius
-          const y = Math.sin(angle) * radius
-          const active = hovered === idx
-          const offset = 110
-          const tx = Math.cos(angle) * offset
-          const ty = Math.sin(angle) * offset
-          return (
-            <motion.div
-              key={skill.name}
-              className="absolute"
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: `translate(${x}px, ${y}px)`,
-              }}
-              onHoverStart={() => setHovered(idx)}
-              onHoverEnd={() => setHovered(null)}
-            >
+        {/* Rotating skills container */}
+        <motion.div
+          className="absolute inset-0"
+          animate={{ rotate: isPaused ? 0 : 360 }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          style={{ willChange: 'transform' }}
+        >
+          {skills.map((skill, idx) => {
+            const angle = (idx / skills.length) * Math.PI * 2
+            const x = Math.cos(angle) * radius
+            const y = Math.sin(angle) * radius
+            const active = hovered === idx
+
+            return (
               <motion.div
-                whileHover={{ scale: 1.14, rotate: 4, zIndex: 30 }}
-                className="relative grid place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur-lg shadow-panel overflow-hidden"
-                style={{ width: 58, height: 58 }}
+                key={skill.name}
+                className="absolute"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  x: x - 29,
+                  y: y - 29,
+                }}
+                onHoverStart={() => {
+                  setHovered(idx)
+                  setIsPaused(true)
+                }}
+                onHoverEnd={() => {
+                  setHovered(null)
+                  setIsPaused(false)
+                }}
               >
-                <img src={skill.logo} alt={skill.name} className="h-7 w-7 object-contain" />
+                {/* Counter-rotate the skill icon to keep it upright */}
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={
-                    active
-                      ? { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2 } }
-                      : { opacity: 0, y: 10, scale: 0.95, transition: { duration: 0.2 } }
-                  }
-                  className="absolute left-1/2 top-1/2 rounded-2xl border border-white/15 bg-white/12 backdrop-blur-xl px-4 py-3 min-w-[220px] shadow-panel z-20 pointer-events-none"
-                  style={{
-                    transform: `translate(-50%, -50%) translate(${tx}px, ${ty}px)`,
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+                  animate={{ rotate: isPaused ? 0 : -360 }}
+                  transition={{
+                    duration: 30,
+                    repeat: Infinity,
+                    ease: 'linear',
                   }}
                 >
-                  <p className="text-xs font-semibold text-white">{skill.name}</p>
-                  <div className="mt-1 h-2 rounded-full bg-white/10 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={active ? { width: `${skill.percent}%` } : { width: 0 }}
-                      transition={{ duration: 0.35, ease: 'easeOut' }}
-                      className="h-full rounded-full"
+                  <motion.div
+                    whileHover={{ scale: 1.14, zIndex: 30 }}
+                    className="relative grid place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur-lg shadow-panel"
+                    style={{ width: 58, height: 58 }}
+                  >
+                    <img src={skill.logo} alt={skill.name} className="h-7 w-7 object-contain" />
+                  </motion.div>
+
+                  {/* Tooltip - positioned OUTSIDE the skill icon with glassy design */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={
+                      active
+                        ? { opacity: 1, scale: 1, transition: { duration: 0.2 } }
+                        : { opacity: 0, scale: 0.9, transition: { duration: 0.15 } }
+                    }
+                    className="absolute left-1/2 rounded-2xl border border-white/20 px-4 py-3 min-w-[200px] pointer-events-none"
+                    style={{
+                      transform: 'translateX(-50%)',
+                      top: '100%',
+                      marginTop: 12,
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      zIndex: 50,
+                    }}
+                  >
+                    <p className="text-sm font-semibold text-white">{skill.name}</p>
+                    <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={active ? { width: `${skill.percent}%` } : { width: 0 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{
+                          background: `linear-gradient(90deg, ${skill.color}, rgba(255,255,255,0.9))`,
+                        }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] text-white/70">{skill.percent}% proficiency</p>
+                    {/* Arrow pointer with glassy effect */}
+                    <div
+                      className="absolute left-1/2 -top-2 w-4 h-4 border-l border-t border-white/20"
                       style={{
-                        background: `linear-gradient(90deg, ${skill.color}, rgba(255,255,255,0.9))`,
+                        transform: 'translateX(-50%) rotate(45deg)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
                       }}
                     />
-                  </div>
-                  <p className="mt-1 text-[11px] text-white/70">{skill.percent}% proficiency</p>
+                  </motion.div>
                 </motion.div>
               </motion.div>
-            </motion.div>
-          )
-        })}
+            )
+          })}
+        </motion.div>
       </div>
     </div>
   )
@@ -532,14 +647,29 @@ function App() {
             <div className="space-y-6">
               <Badge>Available for select projects</Badge>
               <Reveal className="space-y-4">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display text-white leading-tight">
-                  Building vivid digital stories with{' '}
-                  <span className="text-accentText">React</span>
+                <h1
+                  className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold text-white leading-tight"
+                  style={{
+                    textShadow: '0 0 15px rgba(255,255,255,0.15), 0 0 30px rgba(255,255,255,0.08)',
+                  }}
+                >
+                  Be addicted to bettering {' '}
+                  <span
+                    style={{
+                      color: '#FFFDD0',
+                      textShadow: '0 0 12px rgba(255,253,208,0.3), 0 0 24px rgba(255,253,208,0.15)',
+                    }}
+                  >
+                    Yourself
+                  </span>
                   .
                 </h1>
                 <p className="text-lg text-white/70 leading-7 max-w-2xl">
-                  I craft expressive interfaces, motion-rich product tours, and fast, accessible
-                  web apps for brands who care about detail.
+                  <TypeWriter
+                    text="I craft expressive interfaces, motion-rich product tours, and fast, accessible web apps for brands who care about detail."
+                    speed={35}
+                    delay={800}
+                  />
                 </p>
               </Reveal>
 
@@ -725,45 +855,45 @@ function App() {
                 onSubmit={handleSubmit(onSubmit)}
                 className="glass rounded-3xl p-6 border border-white/10 space-y-4"
               >
-              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <label className="text-sm text-white/80 space-y-1">
+                    Name
+                    <input
+                      {...register('name', { required: true })}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                      placeholder="Your name"
+                    />
+                  </label>
+                  <label className="text-sm text-white/80 space-y-1">
+                    Email
+                    <input
+                      {...register('email', { required: true })}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                      placeholder="you@email.com"
+                      type="email"
+                    />
+                  </label>
+                </div>
                 <label className="text-sm text-white/80 space-y-1">
-                  Name
+                  Project
                   <input
-                    {...register('name', { required: true })}
+                    {...register('project')}
                     className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                    placeholder="Your name"
+                    placeholder="Website redesign, SaaS dashboard..."
                   />
                 </label>
                 <label className="text-sm text-white/80 space-y-1">
-                  Email
-                  <input
-                    {...register('email', { required: true })}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                    placeholder="you@email.com"
-                    type="email"
+                  Message
+                  <textarea
+                    {...register('message', { required: true })}
+                    className="w-full min-h-[140px] rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                    placeholder="What are you building?"
                   />
                 </label>
-              </div>
-              <label className="text-sm text-white/80 space-y-1">
-                Project
-                <input
-                  {...register('project')}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                  placeholder="Website redesign, SaaS dashboard..."
-                />
-              </label>
-              <label className="text-sm text-white/80 space-y-1">
-                Message
-                <textarea
-                  {...register('message', { required: true })}
-                  className="w-full min-h-[140px] rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
-                  placeholder="What are you building?"
-                />
-              </label>
-              <button type="submit" className="btn-primary w-full justify-center">
-                Send it
-                <Send className="h-4 w-4" />
-              </button>
+                <button type="submit" className="btn-primary w-full justify-center">
+                  Send it
+                  <Send className="h-4 w-4" />
+                </button>
               </form>
             </Reveal>
           </section>
