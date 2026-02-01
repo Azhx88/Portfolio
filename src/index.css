@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-bg text-sand font-body;
+    background: radial-gradient(circle at 20% 20%, rgba(113, 39, 186, 0.22), transparent 32%),
+      radial-gradient(circle at 78% 8%, rgba(152, 87, 211, 0.22), transparent 34%),
+      radial-gradient(circle at 60% 75%, rgba(113, 39, 186, 0.28), transparent 34%),
+      radial-gradient(circle at 15% 82%, rgba(152, 87, 211, 0.18), transparent 36%),
+      linear-gradient(135deg, #0f0b1e 0%, #1a0b2e 50%, #0f0b1e 100%);
+    background-size: 160% 160%;
+    animation: gradientShift 16s ease-in-out infinite alternate;
+    position: relative;
+  }
+
+  ::selection {
+    @apply bg-accent/40 text-white;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] bg-white/10 border border-white/10;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold transition ease-out duration-200;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-accent to-accent2 text-surface shadow-glow hover:translate-y-[-1px];
+  }
+  .btn-ghost {
+    @apply btn border border-white/15 text-sand hover:bg-white/5;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 20% 30%;
+  }
+  50% {
+    background-position: 50% 70%;
+  }
+  100% {
+    background-position: 80% 30%;
+  }
+}
