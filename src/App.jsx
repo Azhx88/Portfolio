@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   motion,
   useAnimation,
@@ -7,7 +7,6 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion'
-import Snowfall from 'react-snowfall'
 import { Link, Element, animateScroll as scroll } from 'react-scroll'
 import {
   ArrowRight,
@@ -127,49 +126,41 @@ function useRotatingText(words, delay = 1800) {
   return words[index]
 }
 
-function TypeWriter({ text, speed = 40, delay = 500 }) {
+function TypeWriter({ text, speed = 50, delay = 500 }) {
   const [displayText, setDisplayText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [showCursor, setShowCursor] = useState(true)
+  const [isComplete, setIsComplete] = useState(false)
 
   useEffect(() => {
-    // Initial delay before typing starts
     const startTimeout = setTimeout(() => {
       setIsTyping(true)
     }, delay)
-
     return () => clearTimeout(startTimeout)
   }, [delay])
 
   useEffect(() => {
     if (!isTyping) return
-
     if (displayText.length < text.length) {
       const timeout = setTimeout(() => {
         setDisplayText(text.slice(0, displayText.length + 1))
       }, speed)
       return () => clearTimeout(timeout)
+    } else {
+      setIsComplete(true)
     }
   }, [displayText, text, speed, isTyping])
-
-  // Blinking cursor effect
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor((prev) => !prev)
-    }, 530)
-    return () => clearInterval(cursorInterval)
-  }, [])
 
   return (
     <span>
       {displayText}
       <span
-        className="inline-block w-[2px] h-[1.1em] ml-1 align-middle"
+        className="inline-block w-[2px] h-[1.1em] ml-1 align-middle bg-white/80"
         style={{
-          backgroundColor: showCursor ? 'rgba(255,255,255,0.8)' : 'transparent',
-          transition: 'background-color 0.1s',
+          animation: 'blink 1s step-end infinite',
+          opacity: isComplete ? 1 : undefined,
         }}
       />
+      <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
     </span>
   )
 }
@@ -226,16 +217,16 @@ function Reveal({ children, custom = 0, className, ...rest }) {
   )
 }
 
-function Badge({ children }) {
+const Badge = memo(function Badge({ children }) {
   return (
     <span className="pill">
       <Sparkles className="h-4 w-4 text-accent2" />
       {children}
     </span>
   )
-}
+})
 
-function SectionTitle({ eyebrow, title, kicker }) {
+const SectionTitle = memo(function SectionTitle({ eyebrow, title, kicker }) {
   return (
     <div className="space-y-2">
       <p className="text-sm uppercase tracking-[0.25em] text-accent2">{eyebrow}</p>
@@ -243,7 +234,7 @@ function SectionTitle({ eyebrow, title, kicker }) {
       {kicker && <p className="text-sm text-white/70 max-w-2xl">{kicker}</p>}
     </div>
   )
-}
+})
 
 function SkillOrbit() {
   const [hovered, setHovered] = useState(null)
@@ -253,52 +244,40 @@ function SkillOrbit() {
   return (
     <div className="relative mt-10 mb-6 flex items-center justify-center">
       <div className="relative h-[360px] w-full max-w-[560px]">
-        {/* Animated orbit rings with floating effect */}
-        {[110, 160, 210].map((r, i) => (
-          <motion.div
+        {/* Static orbit rings - no animation for performance */}
+        {[110, 160, 210].map((r) => (
+          <div
             key={r}
             className="absolute inset-0 m-auto rounded-full border border-white/10"
-            style={{ width: r * 2, height: r * 2, filter: 'drop-shadow(0 0 30px rgba(113,39,186,0.25))' }}
-            animate={{
-              scale: [1, 1.02, 1],
-              rotate: [0, i % 2 === 0 ? 360 : -360],
-            }}
-            transition={{
-              scale: {
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              },
-              rotate: {
-                duration: 60 + i * 20,
-                repeat: Infinity,
-                ease: 'linear',
-              },
-            }}
+            style={{ width: r * 2, height: r * 2 }}
           />
         ))}
 
-        {/* Center element with floating animation */}
-        <motion.div
+        {/* Center element - simple CSS animation */}
+        <div
           className="absolute inset-0 flex items-center justify-center"
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ animation: 'float 4s ease-in-out infinite' }}
         >
           <div className="h-28 w-28 rounded-full bg-gradient-to-b from-accent/70 to-accent2/50 blur-[2px]" />
           <div className="absolute h-24 w-24 rounded-full bg-surface/80 border border-white/10 grid place-items-center text-white font-semibold">
             Stack
           </div>
-        </motion.div>
+        </div>
 
-        {/* Rotating skills container */}
-        <motion.div
-          className="absolute inset-0"
-          animate={{ rotate: isPaused ? 0 : 360 }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
+        {/* CSS Animation for orbit rotation */}
+        <style>{`
+          @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes counter-orbit { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+          @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+          .orbit-container { animation: orbit 40s linear infinite; }
+          .orbit-container.paused { animation-play-state: paused; }
+          .counter-rotate { animation: counter-orbit 40s linear infinite; }
+          .counter-rotate.paused { animation-play-state: paused; }
+        `}</style>
+
+        {/* Rotating skills container - CSS animation */}
+        <div
+          className={`absolute inset-0 orbit-container ${isPaused ? 'paused' : ''}`}
           style={{ willChange: 'transform' }}
         >
           {skills.map((skill, idx) => {
@@ -308,90 +287,71 @@ function SkillOrbit() {
             const active = hovered === idx
 
             return (
-              <motion.div
+              <div
                 key={skill.name}
                 className="absolute"
                 style={{
                   left: '50%',
                   top: '50%',
-                  x: x - 29,
-                  y: y - 29,
+                  transform: `translate(${x - 29}px, ${y - 29}px)`,
                 }}
-                onHoverStart={() => {
+                onMouseEnter={() => {
                   setHovered(idx)
                   setIsPaused(true)
                 }}
-                onHoverEnd={() => {
+                onMouseLeave={() => {
                   setHovered(null)
                   setIsPaused(false)
                 }}
               >
-                {/* Counter-rotate the skill icon to keep it upright */}
-                <motion.div
-                  animate={{ rotate: isPaused ? 0 : -360 }}
-                  transition={{
-                    duration: 30,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.14, zIndex: 30 }}
-                    className="relative grid place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur-lg shadow-panel"
+                {/* Counter-rotate to keep upright - CSS animation */}
+                <div className={`counter-rotate ${isPaused ? 'paused' : ''}`}>
+                  <div
+                    className="relative grid place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur-sm shadow-panel transition-transform duration-200 hover:scale-110"
                     style={{ width: 58, height: 58 }}
                   >
                     <img src={skill.logo} alt={skill.name} className="h-7 w-7 object-contain" />
-                  </motion.div>
+                  </div>
 
-                  {/* Tooltip - positioned OUTSIDE the skill icon with glassy design */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={
-                      active
-                        ? { opacity: 1, scale: 1, transition: { duration: 0.2 } }
-                        : { opacity: 0, scale: 0.9, transition: { duration: 0.15 } }
-                    }
-                    className="absolute left-1/2 rounded-2xl border border-white/20 px-4 py-3 min-w-[200px] pointer-events-none"
+                  {/* Tooltip - reduced blur for performance */}
+                  <div
+                    className={`absolute left-1/2 rounded-2xl border border-white/20 px-4 py-3 min-w-[200px] pointer-events-none transition-all duration-200 ${active ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                     style={{
                       transform: 'translateX(-50%)',
                       top: '100%',
                       marginTop: 12,
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
-                      backdropFilter: 'blur(20px)',
-                      WebkitBackdropFilter: 'blur(20px)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      background: 'rgba(15, 10, 30, 0.85)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                       zIndex: 50,
                     }}
                   >
                     <p className="text-sm font-semibold text-white">{skill.name}</p>
                     <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={active ? { width: `${skill.percent}%` } : { width: 0 }}
-                        transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="h-full rounded-full"
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
                         style={{
+                          width: active ? `${skill.percent}%` : '0%',
                           background: `linear-gradient(90deg, ${skill.color}, rgba(255,255,255,0.9))`,
                         }}
                       />
                     </div>
                     <p className="mt-1 text-[11px] text-white/70">{skill.percent}% proficiency</p>
-                    {/* Arrow pointer with glassy effect */}
+                    {/* Arrow pointer */}
                     <div
                       className="absolute left-1/2 -top-2 w-4 h-4 border-l border-t border-white/20"
                       style={{
                         transform: 'translateX(-50%) rotate(45deg)',
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
+                        background: 'rgba(15, 10, 30, 0.85)',
                       }}
                     />
-                  </motion.div>
-                </motion.div>
-              </motion.div>
+                  </div>
+                </div>
+              </div>
             )
           })}
-        </motion.div>
+        </div>
       </div>
     </div>
   )
@@ -546,13 +506,13 @@ function FloatingGlows() {
     <>
       <motion.div
         aria-hidden
-        className="pointer-events-none fixed -left-32 top-10 h-[420px] w-[420px] rounded-full bg-accent/25 blur-[140px] z-0"
-        style={{ y: y1 }}
+        className="pointer-events-none fixed -left-32 top-10 h-[420px] w-[420px] rounded-full bg-accent/25 blur-[80px] z-0"
+        style={{ y: y1, willChange: 'transform' }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none fixed right-[-120px] bottom-[-40px] h-[520px] w-[520px] rounded-full bg-accent2/18 blur-[150px] z-0"
-        style={{ y: y2 }}
+        className="pointer-events-none fixed right-[-120px] bottom-[-40px] h-[520px] w-[520px] rounded-full bg-accent2/18 blur-[90px] z-0"
+        style={{ y: y2, willChange: 'transform' }}
       />
     </>
   )
@@ -579,18 +539,7 @@ function App() {
     <div className="min-h-screen">
       <div className="pointer-events-none fixed inset-0 bg-noise opacity-30 [background-size:120px_120px]" />
       <div className="pointer-events-none fixed inset-0 bg-gradient-to-b from-white/5 via-transparent to-accent/10 blur-3xl" />
-      <Snowfall
-        color="rgba(255,255,255,0.7)"
-        snowflakeCount={180}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 2,
-          pointerEvents: 'none',
-        }}
-      />
+
       <ScrollProgress />
       <FloatingGlows />
 
