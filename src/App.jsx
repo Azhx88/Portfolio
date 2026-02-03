@@ -51,40 +51,45 @@ const skills = [
 
 const projects = [
   {
-    title: 'Nova Commerce',
+    title: 'Text & Image',
     tag: 'web',
-    tech: ['React', 'Stripe', 'Sanity', 'Framer Motion'],
+    tech: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
     description:
-      'Headless storefront with animated product stories, shoppable reels, and realtime cart.',
-    link: 'https://example.com',
-    repo: 'https://github.com/example/nova',
+      "Built a user-friendly text-on-image creation tool that lets users easily design and customize visual content. It is a absolute  timesaver  and supports smooth, intuitive creative workflows for modern content creators.",
+    image: '/text&image.png',
+    link: 'https://texteffects.netlify.app/',
+    repo: 'https://github.com/Azhx88/Text-and-image',
   },
   {
-    title: 'Signal Desk',
+    title: 'Data-Insights-Bot',
     tag: 'dashboard',
-    tech: ['Next.js', 'GraphQL', 'Tailwind', 'Recharts'],
+    tech: ['Python', 'Snowflake', 'Streamlit', 'flask', 'olama', 'Matplotlib'],
     description:
-      'Analytics cockpit for revenue teams with live KPI tiles, anomaly alerts, and filters.',
-    link: 'https://example.com',
-    repo: 'https://github.com/example/signal-desk',
+      "Data Insights Bot reads your CSV data and answers your questions by pulling exact insights directly from that specific data you uploaded. It acts like a smart assistant sitting on top of your data — you ask, it digs into your file and gives you real answers with trends and reasons.",
+    image: '/datainsight.png',
+    link: 'https://stock-forecast.streamlit.app/',
+    repo: 'https://github.com/Azhx88/Stock-Forecast',
   },
   {
-    title: 'Palette',
+    title: 'House Rental System',
     tag: 'ui',
-    tech: ['React', 'Storybook', 'CSS Variables'],
+    tech: ['Angular', 'Node.js', 'MongoDB', 'Tailwind CSS', 'Express'],
     description:
-      'Design system kit with tokens, theming, motion presets, and usage-ready components.',
-    link: 'https://example.com',
-    repo: 'https://github.com/example/palette',
+      'House Rental System is a full-stack web app where users can register, browse available houses, and book rentals — while admins can manage listings, view bookings, and control the entire platform.',
+    image: '/house-rental.png',
+    link: 'https://stock-forecast.streamlit.app/',
+    repo: 'https://github.com/Azhx88/online-house-rental-system',
   },
   {
-    title: 'Flow Fields',
-    tag: 'experiments',
-    tech: ['Canvas', 'Noise', 'Shaders'],
+
+    title: 'Stock Forecaster',
+    tag: 'dashboard',
+    tech: ['Python', 'Flask', 'Streamlit', 'Matplotlib'],
     description:
-      'Playable generative gallery with saved palettes, exports, and physics-based motion.',
-    link: 'https://example.com',
-    repo: 'https://github.com/example/flow-fields',
+      'Stock Forecaster is a web app that takes stock data and predicts future prices using historical trends, giving you clean visual charts and forecasts instantly. Just pick a stock, and it analyzes the past data and shows you where the price is likely to go — simple, fast, and visual.',
+    image: '/stock1.png',
+    link: 'https://stock-forecast.streamlit.app/',
+    repo: 'https://github.com/Azhx88/Stock-Forecast',
   },
 ]
 
@@ -413,24 +418,20 @@ function ProjectCard({ project, index }) {
           aria-hidden
           className="absolute inset-0 bg-gradient-radial from-accent/25 via-transparent to-transparent blur-[120px]"
         />
-        <div className="relative aspect-[16/10] rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 via-white/6 to-transparent shadow-panel">
-          <div
-            className="absolute inset-0 opacity-25"
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)',
-              backgroundSize: '18px 18px',
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/35" />
-          <div className="absolute left-4 top-4 pill bg-white/10 text-[11px]">Wireframe</div>
+        <div className="relative aspect-[16/10] rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 via-white/6 to-transparent shadow-panel group">
+          {project.image && (
+            <img
+              src={project.image}
+              alt={`${project.title} preview`}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+          <div className="absolute left-4 top-4 pill bg-white/10 backdrop-blur-sm text-[11px]">{project.title}</div>
           <div className="absolute bottom-4 right-4 flex gap-2">
-            <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] text-white/80">
+            <span className="rounded-full bg-white/10 backdrop-blur-sm px-3 py-1 text-[11px] text-white/80">
               {project.tag}
             </span>
-          </div>
-          <div className="flex h-full items-center justify-center text-white/70 text-sm tracking-wide">
-            Preview placeholder
           </div>
         </div>
       </div>
